@@ -143,7 +143,7 @@ void MicroThings8266::loopStationMode() {
   socketServer = new WiFiServer(TCP_PORT);
   socketServer->begin();
   while (!client) {
-    Serial.println("Broadcasting...[" + multiCastAddress + "]");
+    //Serial.println("Broadcasting...[" + multiCastAddress + "]");
     udp.beginPacket(multiCastAddress.c_str(), UDP_PORT);
     udp.write(getClientId().c_str());
     udp.endPacket();
@@ -158,15 +158,11 @@ void MicroThings8266::loopStationMode() {
   Serial.println("Client Connected....");
   uint8_t data[3];
   Serial.println("Sizeof Data:" + sizeof(data));
-  int counter = 0;
   client.setNoDelay(true);
   while (client.connected()) {
     if (client.available()) {
-      Serial.println("Reading data..");
+      Serial.println("Reading 3 data bytes...");
       int read = client.read(data, 3);
-      Serial.println(read);
-      client.write(counter++);
-      //client.flush();
       executeCommand(&client, data);
       yield();
     } else {
@@ -214,7 +210,8 @@ void MicroThings8266::cmdEcho(WiFiClient* client, byte* data) {
   Serial.println("Echo String: [" + echo + "]");
   String response = echo + "\n";
   Serial.println("Response String: [" + response + "]");
-  client->write(response.c_str());
+  client->write(&response.c_str()[0], response.length());
+  client->flush();
 }
 
 /**
@@ -254,6 +251,6 @@ void MicroThings8266::cmdDigitalRead(WiFiClient* client, byte* data) {
   Serial.println("Digital Read: pin=" + String(pin));
   byte result = digitalRead(pin);
   Serial.println("Pin State:" + String(result));
-  client->write(result);
-  // client->flush();
+  client->write((byte*) &result, sizeof(result));
+  client->flush();
 }
